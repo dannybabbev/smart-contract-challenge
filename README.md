@@ -38,3 +38,24 @@ pub mod gate_lock {
 ### Solution
 The solution should be able to run as many times as we want given the random payloads and always have the contract function `isSolved` return true.
 Your solution should go in /bin/solution.rs
+
+
+### Solution steps performed and sources used
+#### Rust Build Script
+The first step of the challange is to set up the project and make it compile. 
+1. Set up a rust build script running automatically on `cargo build` when relevant files are directories change (https://doc.rust-lang.org/cargo/reference/build-scripts.html)
+2. Run `forge build` to ensure we are working with the latest version of the contracts
+3. Generate the bindings file as per the section **Setup Requirements**
+
+**AI Usage:** Cursor in Ask mode to help me generate the boilplate for `build.rs`. I make changes to the directories it monitored, by adding more and a step to ensure that `forge build` runs on each build - ensuring the _Whenever there is a change, we want our buildscript to detect it and rebuild the contract bindings so that if there is any integration changes that would be breaking, it would be caught by tests._ requirement is met.
+
+**Comment:** I tried using the official forge command https://getfoundry.sh/forge/reference/bind but I couldn't make it compile because of a mismatch between the used alloy version and the foundry generated types. I believe that it would work with the newest versions of alloy.
+
+**Sources used:**
+ - https://doc.rust-lang.org/cargo/reference/build-scripts.html
+ - https://getfoundry.sh/forge/reference/bind
+
+#### Storage manipulations in the EVM:
+
+Source:
+- https://docs.soliditylang.org/en/v0.8.26/internals/layout_in_storage.html

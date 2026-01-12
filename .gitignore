@@ -1,5 +1,4 @@
 target
-build.rs
 bin/sorella_solution.rs
 contracts/out
 contracts/cache
