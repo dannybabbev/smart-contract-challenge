@@ -83,14 +83,15 @@ To finish the challenge we need to flip the 224th bit of the in-memory value to 
 
 
 ### Verifying the solution
-We need to call the `isSolved` function on the smart contract at the end of `solve` to verify our solution.
+We need to call the `isSolved` function on the smart contract at the end of `solve` to verify our solution. I isolated the smart contract call in `call_is_solved()`
 
-**Comment:** The function is very rough as it is. It would be very impractical to add more smart contract calls in the same style. In a production app we would of course isolate all repeating code and put it behind an interface which can be called elegantly using one-liners. The current structure works for the challenge as we have only one contract call to make.
+**Comment:** The function `call_is_solved()` is very rough as it is. It would be very impractical to add more smart contract calls in the same style. In a production app we would of course isolate all repeating code and put it behind an interface which can be called elegantly using one-liners. The current structure works for the challenge as we have only one contract call to make.
 
 **AI Usage:** Claude Opus 4.5 in Ask mode to help me write the boilerplate `call_is_solved()`. This is a standard smart contract call so there is no need to dig too deep for the purposes of this challenge.
 
 ### Taking something like this to production
 This is a very rough app and I was very minimal to deliver only what is needed. The challenge was big enough as it is so I did not go into making clean and testable structures and functions. The most important points I would consider and perfect when taking something like this to production are:
+- Separation of different logic and code into modules following the DRY approach _(in general I like to use a lot of OOP approaches within a MVC structure to separate common logic and build maintainable code)_
 - Full test coverage under a TDD approach
 - Ensure that the build or unit tests break when contract logic changes and execution logic changes
 - Full CI/CD where tests run on every push and PR
