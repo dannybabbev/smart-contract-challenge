@@ -106,7 +106,7 @@ async fn solve<DB: DatabaseRef>(contract_address: Address, db: DB) -> eyre::Resu
     
     println!("loaded cotract with account balance: {:?} and nonce: {:?}", account.balance, account.nonce);
 
-    // The linked list of keys
+    // The list of keys we have unlocked
     let mut keys = Vec::new();
 
     // The slot of the value map in the current contract is fixed as 2
