@@ -40,8 +40,8 @@ The solution should be able to run as many times as we want given the random pay
 Your solution should go in /bin/solution.rs
 
 
-### Solution steps performed and sources used
-#### Rust Build Script
+# Solution steps performed and sources used
+### Rust Build Script
 The first step of the challenge is to set up the project and make it compile. 
 1. Set up a rust build script running automatically on `cargo build` when relevant files or directories change (https://doc.rust-lang.org/cargo/reference/build-scripts.html)
 2. Run `forge build` to ensure we are working with the latest version of the contracts
@@ -55,7 +55,7 @@ The first step of the challenge is to set up the project and make it compile.
  - https://doc.rust-lang.org/cargo/reference/build-scripts.html
  - https://getfoundry.sh/forge/reference/bind
 
-#### Tracking the `valueMap` mapping:
+### Tracking the `valueMap` mapping:
 The logic of the `valueMap` linked list is clear. We need to start from 0 and then trace the next key location using the same algorithm as in `constructor` of `GateLock.sol`. Getting the memory locations on the values of the `mapping` is documented clearly in https://docs.soliditylang.org/en/v0.8.26/internals/layout_in_storage.html as `keccak256(h(k) . p)`. The first step was writing `calculate_storage_slot`. After that, we need to deconstruct `firstValue`, `secondValue` and `unlocked` from the value we got from memory. Also, following the docs from Layout in Storage we can deduce the following layout:
 ```
 0-63:     firstValue   (64 bits = 8 bytes)
@@ -71,7 +71,7 @@ Reading the storage slot is done following the documentation in https://docs.rs/
 - https://docs.soliditylang.org/en/v0.8.26/internals/layout_in_storage.html
 - https://docs.rs/revm/latest/revm/trait.DatabaseRef.html
 
-#### Writing to storage
+### Writing to storage
 For this challenge we are working purely on the in-memory database which we spin up with `spin_up_anvil_instance()`. Using the returned type we can derive a writable database `CacheDB`. Using in-memory CacheDB should be sufficient to prove the concept for this challenge.
 
 To finish the challenge we need to flip the 244th bit of the in-memory value to 1. Other than that, the main piece of logic here is the `write_storage()` function. It is very straightforward following the docs in https://docs.rs/revm/19.2.0/revm/db/in_memory_db/struct.CacheDB.html#method.insert_account_storage.
@@ -82,14 +82,14 @@ To finish the challenge we need to flip the 244th bit of the in-memory value to 
 - https://docs.rs/revm/19.2.0/revm/db/in_memory_db/struct.CacheDB.html
 
 
-#### Verifying the solution
+### Verifying the solution
 We need to call the `isSolved` function on the smart contract at the end of `solve` to verify our solution.
 
 **Comment:** The function is very rough as it is. It would be very impractical to add more smart contract calls in the same style. In a production app we would of course isolate all repeating code and put it behind an interface which can be called elegantly using one-liners. The current structure works for the challenge as we have only one contract call to make.
 
 **AI Usage:** Claude Opus 4.5 in Ask mode to help me write the boilerplate `call_is_solved()`. This is a standard smart contract call so there is no need to dig too deep for the purposes of this challenge.
 
-#### Taking something like this to production
+### Taking something like this to production
 This is a very rough app and I was very minimal to deliver only what is needed. The challenge was big enough as it is so I did not go into making clean and testable structures and functions. The most important points I would consider and perfect when taking something like this to production are:
 - Full test coverage under a TDD approach
 - Ensure that the build or unit tests break when contract logic changes and execution logic changes
