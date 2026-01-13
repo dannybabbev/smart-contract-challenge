@@ -74,7 +74,7 @@ Reading the storage slot is done following the documentation in https://docs.rs/
 ### Writing to storage
 For this challenge we are working purely on the in-memory database which we spin up with `spin_up_anvil_instance()`. Using the returned type we can derive a writable database `CacheDB`. Using in-memory CacheDB should be sufficient to prove the concept for this challenge.
 
-To finish the challenge we need to flip the 244th bit of the in-memory value to 1. Other than that, the main piece of logic here is the `write_storage()` function. It is very straightforward following the docs in https://docs.rs/revm/19.2.0/revm/db/in_memory_db/struct.CacheDB.html#method.insert_account_storage.
+To finish the challenge we need to flip the 224th bit of the in-memory value to 1. Other than that, the main piece of logic here is the `write_storage()` function. It is very straightforward following the docs in https://docs.rs/revm/19.2.0/revm/db/in_memory_db/struct.CacheDB.html#method.insert_account_storage.
 
 **AI Usage:** Claude Opus 4.5 in Ask mode to help me wire the mask and flip bit 224. Also useful to write the boilerplate for the function `write_storage()`.
 
