@@ -83,7 +83,7 @@ To finish the challenge we need to flip the 224th bit of the in-memory value to 
 
 
 ### Verifying the solution
-We need to call the `isSolved` function on the smart contract at the end of `solve` to verify our solution. I isolated the smart contract call in `call_is_solved()`
+We need to call the `isSolved()` function on the smart contract at the end of `solve()` to verify our solution. I isolated the smart contract call in `call_is_solved()`
 
 **Comment:** The function `call_is_solved()` is very rough as it is. It would be very impractical to add more smart contract calls in the same style. In a production app we would of course isolate all repeating code and put it behind an interface which can be called elegantly using one-liners. The current structure works for the challenge as we have only one contract call to make.
 
