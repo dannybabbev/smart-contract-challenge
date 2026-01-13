@@ -1,9 +1,17 @@
 use alloy::primitives::{Address, U256, keccak256};
+use alloy::sol_types::{SolCall, SolValue};
 use evm_knowledge::{
     environment_deployment::{deploy_lock_contract, spin_up_anvil_instance},
     fetch_values
 };
-use revm::DatabaseRef;
+use revm::{
+    Evm,
+    DatabaseRef, db::CacheDB,
+    primitives::{TxKind, ExecutionResult, Output},
+};
+
+use evm_knowledge::contract_bindings::gate_lock::GateLock;
+
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
@@ -29,11 +37,69 @@ fn calculate_storage_slot(key: U256, mapping_slot: U256) -> U256 {
     U256::from_be_bytes(keccak256(data).0)
 }
 
+/// Writes a storage value to the cache database
+fn write_storage<DB: DatabaseRef>(
+    cache_db: &mut CacheDB<DB>,
+    address: Address,
+    slot: U256,
+    value: U256,
+) -> eyre::Result<()> {
+    cache_db
+        .insert_account_storage(address, slot, value)
+        .map_err(|_| eyre::eyre!("failed to write storage"))
+}
+
+/// Calls isSolved(uint256[] ids) on the contract using REVM
+fn call_is_solved<DB: DatabaseRef>(
+    cache_db: &mut CacheDB<DB>,
+    contract_address: Address,
+    keys: Vec<U256>,
+) -> eyre::Result<bool> {
+    // Encode the function call using the generated bindings
+    let call = GateLock::isSolvedCall { ids: keys };
+    let calldata = call.abi_encode();
+
+    // Build and execute the EVM call
+    let mut evm = Evm::builder()
+        .with_db(cache_db)
+        .modify_tx_env(|tx| {
+            tx.transact_to = TxKind::Call(contract_address);
+            tx.data = calldata.into();
+        })
+        .build();
+
+    let result = evm.transact().map_err(|_| eyre::eyre!("EVM execution failed"))?;
+
+    // Extract the return value
+    match result.result {
+        ExecutionResult::Success { output, .. } => {
+            match output {
+                Output::Call(bytes) => {
+                    // Decode the bool return value
+                    let decoded = bool::abi_decode(&bytes, true)
+                        .map_err(|_| eyre::eyre!("failed to decode return value"))?;
+                    Ok(decoded)
+                }
+                _ => Err(eyre::eyre!("unexpected output type")),
+            }
+        }
+        ExecutionResult::Revert { output, .. } => {
+            Err(eyre::eyre!("call reverted: {:?}", output))
+        }
+        ExecutionResult::Halt { reason, .. } => {
+            Err(eyre::eyre!("call halted: {:?}", reason))
+        }
+    }
+}
+
 // your solution goes here.
 async fn solve<DB: DatabaseRef>(contract_address: Address, db: DB) -> eyre::Result<bool> {
+    // Wrap in CacheDB for write capability
+    let mut cache_db = CacheDB::new(db);
+
     // Load the account information from the database and
     // test getting the balance and nonce to verify that the contract is loaded correctly
-    let account = db
+    let account = cache_db
         .basic_ref(contract_address)
         .map_err(|_| eyre::eyre!("failed to load account"))?
         .ok_or_else(|| eyre::eyre!("contract account not found"))?;
@@ -57,7 +123,7 @@ async fn solve<DB: DatabaseRef>(contract_address: Address, db: DB) -> eyre::Resu
         let storage_slot = calculate_storage_slot(current_key, value_map_slot);
         
         // Read the packed Values struct
-        let value = db.storage_ref(contract_address, storage_slot).map_err(|_| eyre::eyre!("failed to read storage"))?;
+        let value = cache_db.storage_ref(contract_address, storage_slot).map_err(|_| eyre::eyre!("failed to read storage"))?;
         
         // If empty, we've reached the end of the linked list
         if value == U256::ZERO {
@@ -81,8 +147,8 @@ async fn solve<DB: DatabaseRef>(contract_address: Address, db: DB) -> eyre::Resu
         let second_value: U256 = (value >> 64) & ((U256::from(1) << 160) - U256::from(1));
         
         // Set is_unlocked to true and write back
-        // let unlocked = value | (U256::from(1) << 224);  // bit 224 = byte 28
-        // ... write using anvil_setStorageAt ...
+        let unlocked = value | (U256::from(1) << 224);  // bit 224 = byte 28
+        write_storage(&mut cache_db, contract_address, storage_slot, unlocked)?;
         
         // Compute next key
         current_key = if first_value % 2 == 0 {
@@ -93,7 +159,10 @@ async fn solve<DB: DatabaseRef>(contract_address: Address, db: DB) -> eyre::Resu
     }
 
     println!("found keys: {:?}", keys.len());
-    
 
-    Ok(false)
+    // Call isSolved(uint256[] ids) on the contract and return the result
+    let is_solved = call_is_solved(&mut cache_db, contract_address, keys)?;
+    println!("isSolved: {:?}", is_solved);
+
+    Ok(is_solved)
 }
